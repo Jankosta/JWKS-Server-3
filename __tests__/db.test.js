@@ -115,4 +115,31 @@ describe('DB helper functions', () => {
     await expect(helpers.openDatabase()).rejects.toBeTruthy();
     sqlite3.Database = orig;
   });
+
+  // Test encryption/decryption
+  test('encryptKey and decryptKey work correctly', () => {
+    const plaintext = 'This is a secret key';
+    const encrypted = helpers.encryptKey(plaintext);
+
+    expect(encrypted).toBeDefined();
+    expect(typeof encrypted).toBe('string');
+    expect(encrypted).not.toBe(plaintext);
+    expect(encrypted).toContain(':'); // Should contain IV separator
+
+    const decrypted = helpers.decryptKey(encrypted);
+    expect(decrypted).toBe(plaintext);
+  });
+
+  test('encryptKey produces different ciphertexts for same plaintext', () => {
+    const plaintext = 'Same key';
+    const encrypted1 = helpers.encryptKey(plaintext);
+    const encrypted2 = helpers.encryptKey(plaintext);
+
+    // Different IVs should produce different ciphertexts
+    expect(encrypted1).not.toBe(encrypted2);
+
+    // But both should decrypt to same plaintext
+    expect(helpers.decryptKey(encrypted1)).toBe(plaintext);
+    expect(helpers.decryptKey(encrypted2)).toBe(plaintext);
+  });
 });
